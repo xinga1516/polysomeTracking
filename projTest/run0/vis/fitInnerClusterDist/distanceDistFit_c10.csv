@@ -1,0 +1,3 @@
+distribution,chi_square,chi_pValue,KS_stat,KS_pValue,fit_params
+genFit,16.89,0.598,0.04,0.906,gaussian_kde
+lognorm,25.78,0.057,0.05,0.604,"(0.011550589755725184, -86.49243806171921, 86.48466714883494)"
