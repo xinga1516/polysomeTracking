@@ -5,7 +5,7 @@ from nemotoc.polysome_class.polysome import Polysome
 
 def runPoly(input_star, run_time, project_folder, pixel_size, min_dist, subtomo_path, ctf_file,
             search_radius, link_depth, cluster_threshold, minNumTransform_ratio, fillUpPoly, cpuN, gpu_list, remove_branches,
-            vectorfield_plotting, show_longestPoly, if_avg, avg, transNr_initialCluster, iterN, threshold, do_errorEstimate):
+            vectorfield_plotting, show_longestPoly, if_avg, avg, transNr_initialCluster, iterN, threshold, do_errorEstimate,symmetry=1):
     #check the type of input parameters
     assert isinstance(input_star, str)
     assert isinstance(run_time, str)
@@ -32,7 +32,7 @@ def runPoly(input_star, run_time, project_folder, pixel_size, min_dist, subtomo_
     if not os.path.exists(project_folder):
         os.mkdir(project_folder)
 
-    polysome1 = Polysome(input_star = input_star, run_time = run_time, proj_folder = project_folder)
+    polysome1 = Polysome(input_star = input_star, run_time = run_time, proj_folder = project_folder,symmetry=symmetry)
     #calculate transformations
     polysome1.transForm['pixS'] = pixel_size
     polysome1.transForm['maxDist'] = search_radius

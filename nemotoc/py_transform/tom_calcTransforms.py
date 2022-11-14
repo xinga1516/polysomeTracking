@@ -14,7 +14,7 @@ from nemotoc.py_transform.tom_calcPairTransForm import tom_calcPairTransForm
 from nemotoc.py_log.tom_logger import Log
 
 
-def tom_calcTransforms(posAng, pixS, maxDist, tomoNames='', dmetric='exact', outputName='', verbose=1, worker_n = 1):
+def tom_calcTransforms(posAng, pixS, maxDist, tomoNames='', dmetric='exact', outputName='', verbose=1, worker_n = 1,symmetry=1):
     '''
     TOM_CALCTRANSFORMS calcutes pair transformations for all combinations use
     pruneRad(maxDist) to reduce calc (particles with distance > maxDist will not paired)
@@ -33,6 +33,7 @@ def tom_calcTransforms(posAng, pixS, maxDist, tomoNames='', dmetric='exact', out
         outputName          ('') name of pair output starFile 
         verbose             (1) verbose flag use 0 for no output and no progress display
         worker_n            (1) number of CPUs to process
+        symmetry            the rotational symmetry
 
     OUTPUT
         starSt              star dataframe  containing the transformations and input data information
@@ -71,7 +72,7 @@ def tom_calcTransforms(posAng, pixS, maxDist, tomoNames='', dmetric='exact', out
             idxAct = idx
             posAct = st["p1"]["positions"][idx,:]
             anglesAct = st["p1"]["angles"][idx,:]
-            transListAct = calcTransforms(posAct, anglesAct, maxDist, dmetric, uTomoId[i], idxAct, verbose)
+            transListAct = calcTransforms(posAct, anglesAct, maxDist, dmetric, uTomoId[i], idxAct, verbose, symmetry)
             if isinstance(transListAct, type(None)):
                 continue
             transList = np.concatenate((transList, transListAct),axis=0)
@@ -106,7 +107,7 @@ def tom_calcTransforms(posAng, pixS, maxDist, tomoNames='', dmetric='exact', out
         for pr_id, spl_id in enumerate(spl_ids):
             if pr_id > 0:
                 verbose = 0
-            pr = mp.Process(target = pr_worker, args=(pr_id, st, spl_id, maxDist, dmetric, temp_dir, verbose))
+            pr = mp.Process(target = pr_worker, args=(pr_id, st, spl_id, maxDist, dmetric, temp_dir, verbose,symmetry))
             pr.start()
             processes[pr_id] = pr
         for pr_id, pr in zip(processes.keys(), processes.values()):
@@ -136,7 +137,7 @@ def tom_calcTransforms(posAng, pixS, maxDist, tomoNames='', dmetric='exact', out
         startSt = genStarFile(transList, allTomoNames, st, maxDist, oriPartList, outputName)  
         return startSt 
 
-def pr_worker(pr_id, st, tomo_ids, maxDist, dmetric, temp_dir,verbose):
+def pr_worker(pr_id, st, tomo_ids, maxDist, dmetric, temp_dir,verbose,symmetry=1):
     for j, i in enumerate(tomo_ids):
         idx = list(np.where(st["label"]["tomoID"] == i)[0])
         idxAct = idx
@@ -144,7 +145,7 @@ def pr_worker(pr_id, st, tomo_ids, maxDist, dmetric, temp_dir,verbose):
         anglesAct = st["p1"]["angles"][idx,:]        
         if j>0:
             verbose = 0
-        transListAct = calcTransforms(posAct, anglesAct, maxDist, dmetric, i, idxAct, verbose)
+        transListAct = calcTransforms(posAct, anglesAct, maxDist, dmetric, i, idxAct, verbose,symmetry=1)
         if isinstance(transListAct, type(None)):
             continue
         np.save('%s/tomo%d_trans.npy'%(temp_dir, i), transListAct)
@@ -153,7 +154,8 @@ def pr_worker(pr_id, st, tomo_ids, maxDist, dmetric, temp_dir,verbose):
     os._exit(pr_id)
               
     
-def calcTransforms(pos, angles, pruneRad, dmetric, tomoID, idxAct, verbose):
+def calcTransforms(pos, angles, pruneRad, dmetric, tomoID, idxAct, verbose, symmetry):
+    # calculate the distance of every pair of particles in the "pos" vector(the same tomo).
     #jobList: store three columns: 
     #1.the index of the pair1 in pos_array 2. the index of the pair2 in pos_array
     jobList = np.zeros([pos.shape[0]*pos.shape[0], 2], dtype = np.int)
@@ -178,13 +180,13 @@ def calcTransforms(pos, angles, pruneRad, dmetric, tomoID, idxAct, verbose):
     if  verbose:
         with alive_bar(int(np.floor(jobList.shape[0]/100)+1), title="calculate transforms") as bar:
             for i in range(jobList.shape[0]):             
-                icmb0,icmb1 = jobList[i,:]
+                icmb0,icmb1 = jobList[i,:] # index of two particles
                 pos1 = pos[icmb0,:]
                 pos2 = pos[icmb1,:]
                 ang1 = angles[icmb0,:]
                 ang2 = angles[icmb1,:]
-                posTr1, angTr1, lenPosTr1, lenAngTr1 = tom_calcPairTransForm(pos1,ang1,pos2,ang2,dmetric)
-                posTr2, angTr2, _, _ = tom_calcPairTransForm(pos2,ang2,pos1,ang1,dmetric)
+                posTr1, angTr1, lenPosTr1, lenAngTr1 = tom_calcPairTransForm(pos1,ang1,pos2,ang2,dmetric,symmetry)
+                posTr2, angTr2, _, _ = tom_calcPairTransForm(pos2,ang2,pos1,ang1,dmetric,symmetry)
                 transListAct_inner[i,:] = np.array([idxAct[icmb0], idxAct[icmb1],tomoID,
                                                      posTr1[0], posTr1[1], posTr1[2], angTr1[0], angTr1[1], angTr1[2],                                        
                                                      posTr2[0], posTr2[1], posTr2[2], angTr2[0], angTr2[1], angTr2[2],
@@ -201,8 +203,8 @@ def calcTransforms(pos, angles, pruneRad, dmetric, tomoID, idxAct, verbose):
             pos2 = pos[icmb1,:]
             ang1 = angles[icmb0,:]
             ang2 = angles[icmb1,:]
-            posTr1, angTr1, lenPosTr1, lenAngTr1 = tom_calcPairTransForm(pos1,ang1,pos2,ang2,dmetric)
-            posTr2, angTr2, _, _ = tom_calcPairTransForm(pos2,ang2,pos1,ang1,dmetric)
+            posTr1, angTr1, lenPosTr1, lenAngTr1 = tom_calcPairTransForm(pos1,ang1,pos2,ang2,dmetric,symmetry)
+            posTr2, angTr2, _, _ = tom_calcPairTransForm(pos2,ang2,pos1,ang1,dmetric,symmetry)
             transListAct_inner[i,:] = np.array([idxAct[icmb0], idxAct[icmb1],tomoID,
                                                  posTr1[0], posTr1[1], posTr1[2], angTr1[0], angTr1[1], angTr1[2],                                        
                                                  posTr2[0], posTr2[1], posTr2[2], angTr2[0], angTr2[1], angTr2[2],

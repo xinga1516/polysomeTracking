@@ -40,7 +40,7 @@ class Polysome:
     ''' 
     Polysome is a class that used to cluster neighbors and track linear assembles
     '''
-    def __init__(self, input_star = None, run_time = 'run0', proj_folder = None, translist = None):
+    def __init__(self, input_star = None, run_time = 'run0', proj_folder = None, translist = None, symmetry=1):
         '''
         set the default properties for polysome class
         input:
@@ -64,6 +64,7 @@ class Polysome:
         self.transForm['pixS'] = 3.42 # resolution of per pixel
         self.transForm['maxDist'] = 342 #the searching region of adjacent ribosomes
         self.transForm['branchDepth'] = 2 #searching the depeth of branch of ribosomes;0:clean branch
+        self.transForm['sym'] = symmetry
         
         #for classify
         self.classify = { }
@@ -345,7 +346,7 @@ class Polysome:
             self.transList = self.transList['data_particles']
         else:
             self.transList = tom_calcTransforms(self.io['posAngList'], self.transForm['pixS'], maxDistInPix, '',
-                                                'exact', transFormFile, 1, worker_n)
+                                                'exact', transFormFile, 1, worker_n, self.transForm['sym'])
     
     def groupTransForms(self, worker_n = 1, gpu_list = None, freeMem = None, transNr_initialCluster = 10000, iterN = 1,
                         threshold = 90):

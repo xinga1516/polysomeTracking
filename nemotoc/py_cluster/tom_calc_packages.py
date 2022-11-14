@@ -28,7 +28,7 @@ def tom_calc_packages(num_of_chunck, num_of_calculations, start = 0,index = None
    package_rest = np.mod(num_of_calculations,num_of_chunck)
    
    start = start
-
+   # query
    packages = np.zeros([num_of_chunck, 3],dtype = np.uint64)
    for i in range(num_of_chunck):
        if (num_of_chunck-i) == package_rest:
@@ -38,6 +38,8 @@ def tom_calc_packages(num_of_chunck, num_of_calculations, start = 0,index = None
         
            
        start = start + package_size
+
+   # print(packages)
         
    return packages
            

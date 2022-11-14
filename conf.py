@@ -1,7 +1,7 @@
 #####BASIC PARAMTERS ########
 input_star =  'nemotoc/data/all_particles_neuron_warp.star' #the input star file 
 project_folder = 'projTest' #the folder to store all run_folders.
-run_folder = 'run0' #the folder storing the results of each run
+run_folder = 'run1' #the folder storing the results of each run
 pixel_size = 3.42 #in Ang, the pixel size of input starfile
 cluster_threshold = 25 #the threshold to cut-off the dendrogram tree for clustering
 minNumTransform_ratio = -1  #select clusters with at least minNumTransformRatio transforms. 0:keep any cluster regardless of the #transforms/-1:default ratio:1%
